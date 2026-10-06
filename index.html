@@ -201,7 +201,7 @@ nav.tabs {
   z-index: 5;
   height: var(--nav-h);
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   background: var(--olive);
 }
 nav.tabs button {
@@ -209,9 +209,10 @@ nav.tabs button {
   background: transparent;
   color: var(--on-olive);
   opacity: 0.7;
-  font: 600 1rem Roboto, system-ui, sans-serif;
+  font: 600 0.95rem Roboto, system-ui, sans-serif;
   cursor: pointer;
   border-bottom: 3px solid transparent;
+  padding: 0 2px;
 }
 nav.tabs button[aria-selected="true"] { opacity: 1; border-bottom-color: var(--brass-soft); }
 nav.tabs button:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: -4px; }
@@ -345,6 +346,33 @@ body[data-tab="corrida"] { overflow: hidden; }
 @keyframes blink { to { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) { .racebar.paused .clock { animation: none; opacity: 0.6; } }
 
+.chip.late { background: var(--alert-soft); border-color: var(--alert); color: var(--alert); }
+.log-line.late .log-time { color: var(--alert); }
+.late-n { color: var(--alert); font-size: 0.8rem; font-family: Roboto, system-ui, sans-serif; font-weight: 500; margin-left: 6px; }
+
+/* ---------- Ajustes ---------- */
+#tab-ajustes { max-width: 560px; margin: 0 auto; padding: 22px 18px 40px; }
+#tab-ajustes h2 { font: 700 2rem "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif; margin: 0 0 18px; }
+.cfg {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--line);
+}
+.cfg-txt b { display: block; font-weight: 600; }
+.cfg-txt span { display: block; font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+.stepper { display: flex; align-items: center; gap: 8px; flex: none; }
+.stepper button {
+  width: 44px; height: 44px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font: 600 1.4rem Roboto, system-ui, sans-serif; cursor: pointer; touch-action: manipulation;
+}
+.stepper button:focus-visible { outline: 2px solid var(--olive); outline-offset: 2px; }
+.stepper output {
+  min-width: 62px; text-align: center;
+  font: 700 1.5rem "Roboto Condensed", "sans-serif-condensed", sans-serif; font-variant-numeric: tabular-nums;
+}
+.stepper output small { font-size: 0.9rem; font-weight: 500; color: var(--muted); margin-left: 2px; }
+#cfg-reset { margin-top: 20px; }
+
 /* ---------- Resultado ---------- */
 #tab-resultado { max-width: 560px; margin: 0 auto; padding: 22px 18px 40px; }
 #tab-resultado h2 {
@@ -363,6 +391,7 @@ table.res tr.zero td { opacity: 0.4; }
   <button type="button" role="tab" data-tab="indices">Índices</button>
   <button type="button" role="tab" data-tab="corrida">Corrida</button>
   <button type="button" role="tab" data-tab="resultado">Resultado</button>
+  <button type="button" role="tab" data-tab="ajustes">Ajustes</button>
 </nav>
 
 <main id="tab-indices" class="tab">
@@ -410,9 +439,32 @@ table.res tr.zero td { opacity: 0.4; }
     <button type="button" class="btn danger" id="btn-encerrar">Encerrar corrida</button>
   </div>
   <div class="race-empty" id="race-empty">
-    <p>Toque no apito de largada. O cronômetro de 12 minutos começa junto.</p>
+    <p>Toque no apito de largada. O cronômetro de <span id="dur-txt">12 minutos</span> começa junto.</p>
     <button type="button" class="btn primary" id="btn-iniciar">Iniciar nova corrida</button>
   </div>
+</section>
+
+<section id="tab-ajustes" class="tab" hidden>
+  <h2>Ajustes</h2>
+  <div class="cfg">
+    <div class="cfg-txt"><b>Tempo de prova</b><span id="cfg-dur-info">Sinal de aviso aos 11:00, final aos 12:00</span></div>
+    <div class="stepper" data-k="durMin" data-step="1" data-min="2" data-max="60" data-u="min">
+      <button type="button" aria-label="Diminuir">−</button><output></output><button type="button" aria-label="Aumentar">+</button>
+    </div>
+  </div>
+  <div class="cfg">
+    <div class="cfg-txt"><b>Bloqueio de toque repetido</b><span>Ignora o mesmo número tocado de novo dentro desse tempo</span></div>
+    <div class="stepper" data-k="guardS" data-step="5" data-min="0" data-max="60" data-u="s">
+      <button type="button" aria-label="Diminuir">−</button><output></output><button type="button" aria-label="Aumentar">+</button>
+    </div>
+  </div>
+  <div class="cfg">
+    <div class="cfg-txt"><b>Agrupar no painel</b><span>Registros feitos dentro desse tempo ficam na mesma linha</span></div>
+    <div class="stepper" data-k="groupS" data-step="1" data-min="1" data-max="30" data-u="s">
+      <button type="button" aria-label="Diminuir">−</button><output></output><button type="button" aria-label="Aumentar">+</button>
+    </div>
+  </div>
+  <button type="button" class="btn" id="cfg-reset">Restaurar padrão</button>
 </section>
 
 <section id="tab-resultado" class="tab" hidden>
@@ -546,9 +598,16 @@ render();
 // ================= Corrida =================
 const RKEY = "taf-corrida-v1", TABKEY = "taf-aba";
 const NPADS = 21;           // pulseiras de 1 a 21
-const GROUP_MS = 8000;      // aglutina registros feitos em até 8 s
-const GUARD_MS = 15000;     // ignora o mesmo número tocado de novo em menos de 15 s
-const WARN_MS = 11 * 60000, RACE_MS = 12 * 60000;
+const CKEY = "taf-config-v1";
+const CFG_PADRAO = { durMin: 12, guardS: 15, groupS: 8 };
+let cfg = { ...CFG_PADRAO };
+try { cfg = { ...CFG_PADRAO, ...JSON.parse(localStorage.getItem(CKEY) || "{}") }; } catch (e) {}
+const saveCfg = () => { try { localStorage.setItem(CKEY, JSON.stringify(cfg)); } catch (e) {} };
+const GROUP_MS = () => cfg.groupS * 1000;
+const GUARD_MS = () => cfg.guardS * 1000;
+// tempo da corrida: o da corrida em curso (se houver) ou o configurado
+const RACE_MS = () => (race && race.durMs) || cfg.durMin * 60000;
+const WARN_MS = () => RACE_MS() - 60000;
 
 let race = null;
 try { race = JSON.parse(localStorage.getItem(RKEY) || "null"); } catch (e) { race = null; }
@@ -621,7 +680,7 @@ function registrar(n, btn) {
   const t = decorrido();
   let last = null;
   for (let i = race.taps.length - 1; i >= 0; i--) { const x = race.taps[i]; if (x.n === n && !x.x) { last = x; break; } }
-  if (last && t - last.t < GUARD_MS) {
+  if (last && t - last.t < GUARD_MS()) {
     pulse(btn, "no"); vib([40, 60, 40]);
     setStatus(`Nº ${n} ignorado: já registrado há ${Math.round((t - last.t) / 1000)} s`, true);
     return;
@@ -630,7 +689,7 @@ function registrar(n, btn) {
   let g = 1;
   if (prev) {
     const start = race.taps.find(x => x.g === prev.g).t;
-    g = t - start <= GROUP_MS ? prev.g : prev.g + 1;
+    g = t - start <= GROUP_MS() ? prev.g : prev.g + 1;
   }
   race.taps.push({ id: ++race.seq, n, t, g, x: false });
   saveRace();
@@ -655,7 +714,7 @@ $("log").addEventListener("click", e => {
 function novaCorrida() {
   const ativas = race ? race.taps.filter(t => !t.x).length : 0;
   if (ativas > 0 && !confirm(`Apagar a corrida atual (${ativas} voltas registradas) e começar outra?`)) return;
-  race = { startedAt: Date.now(), taps: [], seq: 0, fired: {} };
+  race = { startedAt: Date.now(), taps: [], seq: 0, fired: {}, durMs: cfg.durMin * 60000 };
   saveRace();
   audioOn(); keepAwake(); setStatus("");
   renderRace(); tick();
@@ -711,8 +770,12 @@ function renderRace() {
   if (!keys.length) { log.innerHTML = '<p class="log-empty">Os registros aparecem aqui. Toque num número para retirar a volta.</p>'; return; }
   log.innerHTML = keys.map(k => {
     const list = groups.get(k);
-    const chips = list.map(t => `<button type="button" class="chip${t.x ? " removed" : ""}" data-id="${t.id}" aria-label="Nº ${t.n}${t.x ? ", retirado" : ""}">${t.n}</button>`).join("");
-    return `<div class="log-line"><span class="log-time">${mmss(list[0].t)}</span>${chips}</div>`;
+    const fim = RACE_MS();
+    const chips = list.map(t => {
+      const late = t.t >= fim;
+      return `<button type="button" class="chip${t.x ? " removed" : ""}${late ? " late" : ""}" data-id="${t.id}" aria-label="Nº ${t.n}${late ? ", após o tempo" : ""}${t.x ? ", retirado" : ""}">${t.n}</button>`;
+    }).join("");
+    return `<div class="log-line${list[0].t >= fim ? " late" : ""}"><span class="log-time">${mmss(list[0].t)}</span>${chips}</div>`;
   }).join("");
   log.scrollTop = 0;
 }
@@ -721,14 +784,15 @@ function tick() {
   const bar = $("racebar");
   if (!race) { $("clock").textContent = "00:00"; $("clock-lbl").textContent = "Sem corrida"; bar.classList.remove("warn", "over"); return; }
   const e = decorrido();
-  $("clock").textContent = mmss(Math.min(e, RACE_MS));
-  bar.classList.toggle("warn", e >= WARN_MS && e < RACE_MS);
-  bar.classList.toggle("over", e >= RACE_MS);
+  const fim = RACE_MS(), aviso = WARN_MS();
+  $("clock").textContent = mmss(e);
+  bar.classList.toggle("warn", e >= aviso && e < fim);
+  bar.classList.toggle("over", e >= fim);
   bar.classList.toggle("paused", !!race.pausedAt);
-  $("clock-lbl").textContent = race.endedAt ? "Corrida encerrada" : race.pausedAt ? "Pausada" : e >= RACE_MS ? "Tempo esgotado" : e >= WARN_MS ? "Último minuto" : "Corrida em andamento";
+  $("clock-lbl").textContent = race.endedAt ? "Corrida encerrada" : race.pausedAt ? "Pausada" : e >= fim ? "Tempo esgotado, +" + mmss(e - fim) : e >= aviso ? "Último minuto" : "Corrida em andamento";
   if (!rodando()) return;
-  if (e >= WARN_MS && e < WARN_MS + 5000 && !race.fired.w) { race.fired.w = 1; saveRace(); beep(880, 0.3); vib(300); }
-  if (e >= RACE_MS && e < RACE_MS + 5000 && !race.fired.e) {
+  if (e >= aviso && e < aviso + 5000 && !race.fired.w) { race.fired.w = 1; saveRace(); beep(880, 0.3); vib(300); }
+  if (e >= fim && e < fim + 5000 && !race.fired.e) {
     race.fired.e = 1; saveRace();
     beep(660, 0.8); setTimeout(() => beep(660, 0.8), 1000); vib([600, 200, 600]);
   }
@@ -740,8 +804,14 @@ function textoResultado() {
   const c = counts();
   const d = new Date(race.startedAt);
   const linhas = [];
-  for (let n = 1; n <= NPADS; n++) if (c[n]) linhas.push(`${n}: ${c[n]} volta${c[n] > 1 ? "s" : ""}`);
-  return `Corrida de 12 min, ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n` + linhas.join("\n");
+  const at = atrasadas();
+  for (let n = 1; n <= NPADS; n++) if (c[n]) linhas.push(`${n}: ${c[n]} volta${c[n] > 1 ? "s" : ""}${at[n] ? ` (${at[n]} após o tempo)` : ""}`);
+  return `Corrida de ${Math.round(RACE_MS() / 60000)} min, ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n` + linhas.join("\n");
+}
+function atrasadas() {
+  const a = Array(NPADS + 1).fill(0), fim = RACE_MS();
+  if (race) race.taps.forEach(t => { if (!t.x && t.t >= fim) a[t.n]++; });
+  return a;
 }
 function renderResult() {
   const el = $("res");
@@ -749,7 +819,8 @@ function renderResult() {
   const c = counts();
   const d = new Date(race.startedAt);
   let rows = "";
-  for (let n = 1; n <= NPADS; n++) rows += `<tr class="${c[n] ? "" : "zero"}"><td>${n}</td><td>${c[n]}</td></tr>`;
+  const at = atrasadas();
+  for (let n = 1; n <= NPADS; n++) rows += `<tr class="${c[n] ? "" : "zero"}"><td>${n}</td><td>${c[n]}${at[n] ? `<span class="late-n">${at[n]} após</span>` : ""}</td></tr>`;
   el.innerHTML = `
     <p class="sub">Corrida iniciada em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}${race.endedAt ? ", encerrada aos " + mmss(decorrido()) : ", ainda em andamento"}.</p>
     <div class="res-actions">
@@ -773,6 +844,41 @@ async function copiar() {
   b.textContent = "Copiado"; setTimeout(() => { b.textContent = "Copiar resultado"; }, 1500);
 }
 
+// Ajustes
+function renderCfg() {
+  document.querySelectorAll(".stepper").forEach(st => {
+    st.querySelector("output").innerHTML = `${cfg[st.dataset.k]}<small>${st.dataset.u}</small>`;
+  });
+  const d = cfg.durMin;
+  $("cfg-dur-info").textContent = `Sinal de aviso aos ${mmss((d - 1) * 60000)}, final aos ${mmss(d * 60000)}`;
+  $("dur-txt").textContent = `${d} minutos`;
+}
+document.querySelectorAll(".stepper").forEach(st => {
+  const [menos, mais] = st.querySelectorAll("button");
+  const mudar = sinal => {
+    const k = st.dataset.k, step = +st.dataset.step, min = +st.dataset.min, max = +st.dataset.max;
+    cfg[k] = Math.min(max, Math.max(min, cfg[k] + sinal * step));
+    saveCfg();
+    // mudar o tempo vale também para a corrida em andamento
+    if (k === "durMin" && race && !race.endedAt) {
+      race.durMs = cfg.durMin * 60000;
+      const e = decorrido();
+      if (e < race.durMs - 60000) race.fired.w = 0;
+      if (e < race.durMs) race.fired.e = 0;
+      saveRace();
+    }
+    renderCfg();
+  };
+  menos.addEventListener("click", () => mudar(-1));
+  mais.addEventListener("click", () => mudar(1));
+});
+$("cfg-reset").addEventListener("click", () => {
+  cfg = { ...CFG_PADRAO }; saveCfg();
+  if (race && !race.endedAt) { race.durMs = cfg.durMin * 60000; saveRace(); }
+  renderCfg();
+});
+renderCfg();
+
 // Abas
 function mostrarAba(nome) {
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === nome ? "true" : "false"));
@@ -786,7 +892,7 @@ function mostrarAba(nome) {
 document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => mostrarAba(b.dataset.tab)));
 let abaInicial = "indices";
 try { abaInicial = localStorage.getItem(TABKEY) || "indices"; } catch (e) {}
-if (!["indices", "corrida", "resultado"].includes(abaInicial)) abaInicial = "indices";
+if (!["indices", "corrida", "resultado", "ajustes"].includes(abaInicial)) abaInicial = "indices";
 mostrarAba(abaInicial);
 keepAwake();
 
