@@ -187,10 +187,177 @@ tbody th { width: 64px; }
   .form label.lbl { margin-top: 6px; }
   h1 { font-size: 2rem; }
 }
+
+/* ---------- Abas ---------- */
+:root { --nav-h: 52px; --alert: #B3261E; --alert-soft: #F6D9D6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --alert: #F2857C; --alert-soft: #3A1E1B; }
+}
+:root[data-theme="dark"] { --alert: #F2857C; --alert-soft: #3A1E1B; }
+[hidden] { display: none !important; }
+nav.tabs {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 5;
+  height: var(--nav-h);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: var(--olive);
+}
+nav.tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--on-olive);
+  opacity: 0.7;
+  font: 600 1rem Roboto, system-ui, sans-serif;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+}
+nav.tabs button[aria-selected="true"] { opacity: 1; border-bottom-color: var(--brass-soft); }
+nav.tabs button:focus-visible { outline: 2px solid var(--brass-soft); outline-offset: -4px; }
+body[data-tab="corrida"] { overflow: hidden; }
+
+/* ---------- Corrida ---------- */
+#tab-corrida {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 10px 12px 12px;
+  height: calc(100dvh - var(--nav-h) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+}
+.racebar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.clock {
+  font: 700 2.3rem "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.clock-lbl { display: block; font: 500 0.8rem Roboto, system-ui, sans-serif; color: var(--muted); margin-top: 2px; }
+.racebar.warn .clock { color: var(--brass); }
+.racebar.over .clock, .racebar.over .clock-lbl { color: var(--alert); }
+.btn {
+  font: 600 0.95rem Roboto, system-ui, sans-serif;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border: 1px solid var(--olive);
+  background: transparent;
+  color: var(--olive);
+}
+.btn.primary { background: var(--olive); color: var(--on-olive); }
+.btn:focus-visible, .pad:focus-visible, .chip:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.log {
+  height: 126px;
+  flex: none;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 2px 10px;
+}
+.log-empty { color: var(--muted); font-size: 0.9rem; padding: 10px 0; margin: 0; }
+.log-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+}
+.log-line + .log-line { border-top: 1px solid var(--line); }
+.log-line:first-child .log-time { color: var(--olive); font-weight: 700; }
+.log-time {
+  width: 44px;
+  font: 500 0.85rem "Roboto Condensed", "sans-serif-condensed", sans-serif;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.chip {
+  min-width: 38px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font: 700 1.15rem "Roboto Condensed", "sans-serif-condensed", sans-serif;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.chip.removed { text-decoration: line-through; opacity: 0.45; }
+.status { min-height: 1.2em; margin: 0; font-size: 0.85rem; color: var(--muted); }
+.status.err { color: var(--alert); }
+
+.pads {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(7, 1fr);
+  gap: 10px;
+}
+.pad {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+.pad b {
+  font: 700 clamp(1.5rem, 5vh, 2.3rem) "Roboto Condensed", "sans-serif-condensed", sans-serif;
+  line-height: 1;
+}
+.pad small { font: 500 0.85rem Roboto, system-ui, sans-serif; color: var(--muted); min-width: 1.6em; text-align: left; }
+.pad.ok { animation: padok 0.4s ease-out; }
+.pad.no { animation: padno 0.5s ease-out; }
+@keyframes padok { from { background: var(--olive); color: var(--on-olive); } to { background: var(--surface); } }
+@keyframes padno { from { background: var(--alert); color: #fff; } to { background: var(--surface); } }
+@media (prefers-reduced-motion: reduce) {
+  .pad.ok, .pad.no { animation-duration: 0.2s; }
+}
+.race-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 0 6px;
+}
+.race-empty p { margin: 0; color: var(--muted); max-width: 34ch; }
+.race-empty .btn { font-size: 1.1rem; padding: 14px 20px; }
+
+/* ---------- Resultado ---------- */
+#tab-resultado { max-width: 560px; margin: 0 auto; padding: 22px 18px 40px; }
+#tab-resultado h2 {
+  font: 700 2rem "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+  margin: 0 0 4px;
+}
+.res-actions { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+table.res { min-width: 0; }
+table.res td { font-size: 1.5rem; padding: 9px 10px; }
+table.res td:first-child { color: var(--muted); }
+table.res tr.zero td { opacity: 0.4; }
 </style>
 </head>
 <body>
-<main>
+<nav class="tabs" role="tablist">
+  <button type="button" role="tab" data-tab="indices">Índices</button>
+  <button type="button" role="tab" data-tab="corrida">Corrida</button>
+  <button type="button" role="tab" data-tab="resultado">Resultado</button>
+</nav>
+
+<main id="tab-indices" class="tab">
   <h1>Índices do TAF</h1>
   <p class="sub">Mínimo para B, MB e E conforme a EB20-D-03.053.</p>
 
@@ -219,6 +386,27 @@ tbody th { width: 64px; }
     <p>Fonte: Portaria EME/C Ex nº 850, de 31 ago 2022, Anexos A a D.</p>
   </div>
 </main>
+
+<section id="tab-corrida" class="tab" hidden>
+  <div class="racebar" id="racebar">
+    <div><span class="clock" id="clock">00:00</span><span class="clock-lbl" id="clock-lbl">Sem corrida</span></div>
+    <button type="button" class="btn" id="btn-nova">Nova corrida</button>
+  </div>
+  <div id="race-live" hidden>
+    <div class="log" id="log" aria-live="polite"></div>
+    <p class="status" id="status"></p>
+  </div>
+  <div class="pads" id="pads" hidden></div>
+  <div class="race-empty" id="race-empty">
+    <p>Toque no apito de largada. O cronômetro de 12 minutos começa junto.</p>
+    <button type="button" class="btn primary" id="btn-iniciar">Iniciar nova corrida</button>
+  </div>
+</section>
+
+<section id="tab-resultado" class="tab" hidden>
+  <h2>Resultado</h2>
+  <div id="res"></div>
+</section>
 
 <script>
 // Cada faixa: [B, MB, E] (limite inferior de cada menção)
@@ -342,6 +530,214 @@ function render() {
     </table></div>${note}`;
 }
 render();
+
+// ================= Corrida =================
+const RKEY = "taf-corrida-v1", TABKEY = "taf-aba";
+const NPADS = 21;           // pulseiras de 1 a 21
+const GROUP_MS = 8000;      // aglutina registros feitos em até 8 s
+const GUARD_MS = 15000;     // ignora o mesmo número tocado de novo em menos de 15 s
+const WARN_MS = 11 * 60000, RACE_MS = 12 * 60000;
+
+let race = null;
+try { race = JSON.parse(localStorage.getItem(RKEY) || "null"); } catch (e) { race = null; }
+const saveRace = () => { try { localStorage.setItem(RKEY, JSON.stringify(race)); } catch (e) {} };
+
+const $ = id => document.getElementById(id);
+const mmss = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+const vib = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+// som
+let actx = null;
+function audioOn() {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+  } catch (e) {}
+}
+function beep(freq, dur) {
+  try {
+    if (!actx) return;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = freq; o.type = "square";
+    g.gain.value = 0.15;
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + dur);
+  } catch (e) {}
+}
+
+// tela sempre acesa durante a corrida
+async function keepAwake() {
+  try {
+    if ("wakeLock" in navigator && race && Date.now() - race.startedAt < RACE_MS + 10 * 60000) {
+      await navigator.wakeLock.request("screen");
+    }
+  } catch (e) {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") keepAwake(); });
+
+function counts() {
+  const c = Array(NPADS + 1).fill(0);
+  if (race) race.taps.forEach(t => { if (!t.x) c[t.n]++; });
+  return c;
+}
+
+// botões 1 a 21
+const pads = $("pads");
+for (let n = 1; n <= NPADS; n++) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "pad"; b.dataset.n = n;
+  b.innerHTML = `<b>${n}</b><small></small>`;
+  b.addEventListener("click", () => registrar(n, b));
+  pads.appendChild(b);
+}
+function pulse(el, cls) { el.classList.remove("ok", "no"); void el.offsetWidth; el.classList.add(cls); }
+
+function setStatus(msg, err) { const s = $("status"); s.textContent = msg || ""; s.classList.toggle("err", !!err); }
+
+function registrar(n, btn) {
+  if (!race) return;
+  audioOn();
+  const t = Date.now() - race.startedAt;
+  let last = null;
+  for (let i = race.taps.length - 1; i >= 0; i--) { const x = race.taps[i]; if (x.n === n && !x.x) { last = x; break; } }
+  if (last && t - last.t < GUARD_MS) {
+    pulse(btn, "no"); vib([40, 60, 40]);
+    setStatus(`Nº ${n} ignorado: já registrado há ${Math.round((t - last.t) / 1000)} s`, true);
+    return;
+  }
+  const prev = race.taps[race.taps.length - 1];
+  let g = 1;
+  if (prev) {
+    const start = race.taps.find(x => x.g === prev.g).t;
+    g = t - start <= GROUP_MS ? prev.g : prev.g + 1;
+  }
+  race.taps.push({ id: ++race.seq, n, t, g, x: false });
+  saveRace();
+  pulse(btn, "ok"); vib(25);
+  setStatus("");
+  renderRace();
+}
+
+function alternar(id) {
+  const tp = race.taps.find(x => x.id === id);
+  if (!tp) return;
+  tp.x = !tp.x;
+  saveRace();
+  setStatus(tp.x ? `Volta do nº ${tp.n} retirada. Toque de novo para devolver.` : `Volta do nº ${tp.n} devolvida.`);
+  renderRace();
+}
+$("log").addEventListener("click", e => {
+  const c = e.target.closest(".chip");
+  if (c) alternar(Number(c.dataset.id));
+});
+
+function novaCorrida() {
+  const ativas = race ? race.taps.filter(t => !t.x).length : 0;
+  if (ativas > 0 && !confirm(`Apagar a corrida atual (${ativas} voltas registradas) e começar outra?`)) return;
+  race = { startedAt: Date.now(), taps: [], seq: 0, fired: {} };
+  saveRace();
+  audioOn(); keepAwake(); setStatus("");
+  renderRace(); tick();
+}
+$("btn-nova").addEventListener("click", novaCorrida);
+$("btn-iniciar").addEventListener("click", novaCorrida);
+
+function renderRace() {
+  const has = !!race;
+  $("race-live").hidden = !has;
+  $("pads").hidden = !has;
+  $("race-empty").hidden = has;
+  $("btn-nova").hidden = !has;
+  if (!has) return;
+  const c = counts();
+  pads.querySelectorAll(".pad").forEach(b => {
+    const n = Number(b.dataset.n);
+    b.querySelector("small").textContent = c[n] ? c[n] + "v" : "";
+  });
+  const groups = new Map();
+  race.taps.forEach(t => { if (!groups.has(t.g)) groups.set(t.g, []); groups.get(t.g).push(t); });
+  const keys = [...groups.keys()].sort((a, b) => b - a);
+  const log = $("log");
+  if (!keys.length) { log.innerHTML = '<p class="log-empty">Os registros aparecem aqui. Toque num número para retirar a volta.</p>'; return; }
+  log.innerHTML = keys.map(k => {
+    const list = groups.get(k);
+    const chips = list.map(t => `<button type="button" class="chip${t.x ? " removed" : ""}" data-id="${t.id}" aria-label="Nº ${t.n}${t.x ? ", retirado" : ""}">${t.n}</button>`).join("");
+    return `<div class="log-line"><span class="log-time">${mmss(list[0].t)}</span>${chips}</div>`;
+  }).join("");
+  log.scrollTop = 0;
+}
+
+function tick() {
+  const bar = $("racebar");
+  if (!race) { $("clock").textContent = "00:00"; $("clock-lbl").textContent = "Sem corrida"; bar.classList.remove("warn", "over"); return; }
+  const e = Date.now() - race.startedAt;
+  $("clock").textContent = mmss(Math.min(e, RACE_MS));
+  bar.classList.toggle("warn", e >= WARN_MS && e < RACE_MS);
+  bar.classList.toggle("over", e >= RACE_MS);
+  $("clock-lbl").textContent = e >= RACE_MS ? "Tempo encerrado" : e >= WARN_MS ? "Último minuto" : "Corrida em andamento";
+  if (e >= WARN_MS && e < WARN_MS + 5000 && !race.fired.w) { race.fired.w = 1; saveRace(); beep(880, 0.3); vib(300); }
+  if (e >= RACE_MS && e < RACE_MS + 5000 && !race.fired.e) {
+    race.fired.e = 1; saveRace();
+    beep(660, 0.8); setTimeout(() => beep(660, 0.8), 1000); vib([600, 200, 600]);
+  }
+}
+setInterval(tick, 250);
+
+// Resultado
+function textoResultado() {
+  const c = counts();
+  const d = new Date(race.startedAt);
+  const linhas = [];
+  for (let n = 1; n <= NPADS; n++) if (c[n]) linhas.push(`${n}: ${c[n]} volta${c[n] > 1 ? "s" : ""}`);
+  return `Corrida de 12 min, ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}\n` + linhas.join("\n");
+}
+function renderResult() {
+  const el = $("res");
+  if (!race) { el.innerHTML = '<p class="empty">Nenhuma corrida registrada. Comece uma na aba Corrida.</p>'; return; }
+  const c = counts();
+  const d = new Date(race.startedAt);
+  let rows = "";
+  for (let n = 1; n <= NPADS; n++) rows += `<tr class="${c[n] ? "" : "zero"}"><td>${n}</td><td>${c[n]}</td></tr>`;
+  el.innerHTML = `
+    <p class="sub">Corrida iniciada em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+    <div class="res-actions">
+      <button type="button" class="btn primary" id="btn-copiar">Copiar resultado</button>
+      ${navigator.share ? '<button type="button" class="btn" id="btn-share">Compartilhar</button>' : ""}
+    </div>
+    <table class="res">
+      <thead><tr><th>Pulseira</th><th>Voltas</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  $("btn-copiar").addEventListener("click", copiar);
+  if (navigator.share) $("btn-share").addEventListener("click", () => navigator.share({ text: textoResultado() }).catch(() => {}));
+}
+async function copiar() {
+  const txt = textoResultado(), b = $("btn-copiar");
+  try { await navigator.clipboard.writeText(txt); }
+  catch (e) {
+    const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta);
+    ta.select(); try { document.execCommand("copy"); } catch (e2) {} ta.remove();
+  }
+  b.textContent = "Copiado"; setTimeout(() => { b.textContent = "Copiar resultado"; }, 1500);
+}
+
+// Abas
+function mostrarAba(nome) {
+  document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === nome ? "true" : "false"));
+  document.querySelectorAll(".tab").forEach(s => { s.hidden = s.id !== "tab-" + nome; });
+  document.body.dataset.tab = nome;
+  try { localStorage.setItem(TABKEY, nome); } catch (e) {}
+  if (nome === "corrida") { renderRace(); tick(); }
+  if (nome === "resultado") renderResult();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("nav.tabs button").forEach(b => b.addEventListener("click", () => mostrarAba(b.dataset.tab)));
+let abaInicial = "indices";
+try { abaInicial = localStorage.getItem(TABKEY) || "indices"; } catch (e) {}
+if (!["indices", "corrida", "resultado"].includes(abaInicial)) abaInicial = "indices";
+mostrarAba(abaInicial);
+keepAwake();
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 }

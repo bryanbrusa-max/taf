@@ -1,4 +1,4 @@
-const CACHE = "taf-v1";
+const CACHE = "taf-v2";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./icon-maskable-512.png"];
 
 self.addEventListener("install", e => {
@@ -13,8 +13,22 @@ self.addEventListener("activate", e => {
   );
 });
 
+const limite = ms => new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms));
+
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
+  // Página: tenta a versão nova (até 3 s); sem internet, usa a salva
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      Promise.race([fetch(e.request), limite(3000)])
+        .then(res => {
+          if (res.ok) { const copia = res.clone(); caches.open(CACHE).then(c => c.put("./index.html", copia)); }
+          return res;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then(hit =>
       hit || fetch(e.request).catch(() => caches.match("./index.html"))
