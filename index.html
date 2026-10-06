@@ -286,7 +286,7 @@ body[data-tab="corrida"] { overflow: hidden; }
   touch-action: manipulation;
 }
 .chip.removed { text-decoration: line-through; opacity: 0.45; }
-.status { min-height: 1.2em; margin: 0; font-size: 0.85rem; color: var(--muted); }
+.status { min-height: 1.2em; margin: 0; font-size: 0.85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .status.err { color: var(--alert); }
 
 .pads {
@@ -336,6 +336,14 @@ body[data-tab="corrida"] { overflow: hidden; }
 }
 .race-empty p { margin: 0; color: var(--muted); max-width: 34ch; }
 .race-empty .btn { font-size: 1.1rem; padding: 14px 20px; }
+
+.racectl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: none; }
+.racectl .btn { height: 50px; font-size: 1rem; }
+.btn.danger { border-color: var(--alert); color: var(--alert); }
+.pad:disabled { opacity: 0.45; cursor: default; }
+.racebar.paused .clock { animation: blink 1.2s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .racebar.paused .clock { animation: none; opacity: 0.6; } }
 
 /* ---------- Resultado ---------- */
 #tab-resultado { max-width: 560px; margin: 0 auto; padding: 22px 18px 40px; }
@@ -397,6 +405,10 @@ table.res tr.zero td { opacity: 0.4; }
     <p class="status" id="status"></p>
   </div>
   <div class="pads" id="pads" hidden></div>
+  <div class="racectl" id="racectl" hidden>
+    <button type="button" class="btn" id="btn-pausa">Pausar</button>
+    <button type="button" class="btn danger" id="btn-encerrar">Encerrar corrida</button>
+  </div>
   <div class="race-empty" id="race-empty">
     <p>Toque no apito de largada. O cronômetro de 12 minutos começa junto.</p>
     <button type="button" class="btn primary" id="btn-iniciar">Iniciar nova corrida</button>
@@ -568,12 +580,19 @@ function beep(freq, dur) {
 // tela sempre acesa durante a corrida
 async function keepAwake() {
   try {
-    if ("wakeLock" in navigator && race && Date.now() - race.startedAt < RACE_MS + 10 * 60000) {
+    if ("wakeLock" in navigator && race && !race.endedAt) {
       await navigator.wakeLock.request("screen");
     }
   } catch (e) {}
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") keepAwake(); });
+
+function decorrido() {
+  if (!race) return 0;
+  const ref = race.endedAt || race.pausedAt || Date.now();
+  return ref - race.startedAt - (race.pausedMs || 0);
+}
+const rodando = () => race && !race.endedAt && !race.pausedAt;
 
 function counts() {
   const c = Array(NPADS + 1).fill(0);
@@ -591,13 +610,15 @@ for (let n = 1; n <= NPADS; n++) {
   pads.appendChild(b);
 }
 function pulse(el, cls) { el.classList.remove("ok", "no"); void el.offsetWidth; el.classList.add(cls); }
+pads.addEventListener("animationend", e => e.target.classList.remove("ok", "no"));
 
 function setStatus(msg, err) { const s = $("status"); s.textContent = msg || ""; s.classList.toggle("err", !!err); }
 
 function registrar(n, btn) {
   if (!race) return;
+  if (!rodando()) { setStatus(race.endedAt ? "Corrida encerrada. Toque em Nova corrida para começar outra." : "Corrida pausada. Toque em Retomar para continuar.", true); return; }
   audioOn();
-  const t = Date.now() - race.startedAt;
+  const t = decorrido();
   let last = null;
   for (let i = race.taps.length - 1; i >= 0; i--) { const x = race.taps[i]; if (x.n === n && !x.x) { last = x; break; } }
   if (last && t - last.t < GUARD_MS) {
@@ -640,6 +661,29 @@ function novaCorrida() {
   renderRace(); tick();
 }
 $("btn-nova").addEventListener("click", novaCorrida);
+
+function pausar() {
+  if (!race || race.endedAt) return;
+  if (race.pausedAt) {
+    race.pausedMs = (race.pausedMs || 0) + (Date.now() - race.pausedAt);
+    race.pausedAt = null;
+    setStatus("Corrida retomada.");
+  } else {
+    race.pausedAt = Date.now();
+    setStatus("Pausada: cronômetro parado e toques bloqueados.");
+  }
+  saveRace(); renderRace(); tick();
+}
+function encerrar() {
+  if (!race || race.endedAt) return;
+  if (!confirm("Encerrar a corrida? As voltas ficam salvas no Resultado.")) return;
+  race.endedAt = race.pausedAt || Date.now();
+  race.pausedAt = null;
+  saveRace(); setStatus("");
+  mostrarAba("resultado");
+}
+$("btn-pausa").addEventListener("click", pausar);
+$("btn-encerrar").addEventListener("click", encerrar);
 $("btn-iniciar").addEventListener("click", novaCorrida);
 
 function renderRace() {
@@ -648,7 +692,13 @@ function renderRace() {
   $("pads").hidden = !has;
   $("race-empty").hidden = has;
   $("btn-nova").hidden = !has;
+  $("racectl").hidden = !has || !!race.endedAt;
   if (!has) return;
+  const pb = $("btn-pausa");
+  pb.textContent = race.pausedAt ? "Retomar" : "Pausar";
+  pb.classList.toggle("primary", !!race.pausedAt);
+  const bloqueado = !rodando();
+  pads.querySelectorAll(".pad").forEach(b => { b.disabled = bloqueado; });
   const c = counts();
   pads.querySelectorAll(".pad").forEach(b => {
     const n = Number(b.dataset.n);
@@ -670,11 +720,13 @@ function renderRace() {
 function tick() {
   const bar = $("racebar");
   if (!race) { $("clock").textContent = "00:00"; $("clock-lbl").textContent = "Sem corrida"; bar.classList.remove("warn", "over"); return; }
-  const e = Date.now() - race.startedAt;
+  const e = decorrido();
   $("clock").textContent = mmss(Math.min(e, RACE_MS));
   bar.classList.toggle("warn", e >= WARN_MS && e < RACE_MS);
   bar.classList.toggle("over", e >= RACE_MS);
-  $("clock-lbl").textContent = e >= RACE_MS ? "Tempo encerrado" : e >= WARN_MS ? "Último minuto" : "Corrida em andamento";
+  bar.classList.toggle("paused", !!race.pausedAt);
+  $("clock-lbl").textContent = race.endedAt ? "Corrida encerrada" : race.pausedAt ? "Pausada" : e >= RACE_MS ? "Tempo esgotado" : e >= WARN_MS ? "Último minuto" : "Corrida em andamento";
+  if (!rodando()) return;
   if (e >= WARN_MS && e < WARN_MS + 5000 && !race.fired.w) { race.fired.w = 1; saveRace(); beep(880, 0.3); vib(300); }
   if (e >= RACE_MS && e < RACE_MS + 5000 && !race.fired.e) {
     race.fired.e = 1; saveRace();
@@ -699,7 +751,7 @@ function renderResult() {
   let rows = "";
   for (let n = 1; n <= NPADS; n++) rows += `<tr class="${c[n] ? "" : "zero"}"><td>${n}</td><td>${c[n]}</td></tr>`;
   el.innerHTML = `
-    <p class="sub">Corrida iniciada em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+    <p class="sub">Corrida iniciada em ${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}${race.endedAt ? ", encerrada aos " + mmss(decorrido()) : ", ainda em andamento"}.</p>
     <div class="res-actions">
       <button type="button" class="btn primary" id="btn-copiar">Copiar resultado</button>
       ${navigator.share ? '<button type="button" class="btn" id="btn-share">Compartilhar</button>' : ""}
@@ -727,7 +779,7 @@ function mostrarAba(nome) {
   document.querySelectorAll(".tab").forEach(s => { s.hidden = s.id !== "tab-" + nome; });
   document.body.dataset.tab = nome;
   try { localStorage.setItem(TABKEY, nome); } catch (e) {}
-  if (nome === "corrida") { renderRace(); tick(); }
+  if (nome === "corrida") { pads.querySelectorAll(".pad").forEach(b => b.classList.remove("ok", "no")); renderRace(); tick(); }
   if (nome === "resultado") renderResult();
   window.scrollTo(0, 0);
 }
