@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Índices do TAF</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#4F6128">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #E6E9DF;
+  --surface: #F4F5EF;
+  --ink: #1C2216;
+  --muted: #5B6350;
+  --line: #C9CEBC;
+  --olive: #4F6128;
+  --olive-soft: #DCE2CB;
+  --brass: #9A7414;
+  --brass-soft: #EFE4C4;
+  --on-olive: #F4F5EF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131710;
+    --surface: #1C2218;
+    --ink: #E4E7DA;
+    --muted: #9AA28C;
+    --line: #333B2B;
+    --olive: #8FA65A;
+    --olive-soft: #283120;
+    --brass: #D6AE4C;
+    --brass-soft: #332B17;
+    --on-olive: #131710;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131710;
+  --surface: #1C2218;
+  --ink: #E4E7DA;
+  --muted: #9AA28C;
+  --line: #333B2B;
+  --olive: #8FA65A;
+  --olive-soft: #283120;
+  --brass: #D6AE4C;
+  --brass-soft: #332B17;
+  --on-olive: #131710;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 18px 40px;
+}
+h1 {
+  font-family: "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+  font-weight: 700;
+  font-size: 2.4rem;
+  line-height: 1;
+  margin: 0 0 6px;
+  letter-spacing: 0.01em;
+}
+.sub { color: var(--muted); margin: 0 0 24px; font-size: 0.95rem; }
+
+.form {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 14px 16px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+}
+.form label.lbl { font-weight: 600; font-size: 0.95rem; }
+input[type="number"] {
+  width: 110px;
+  font: 600 1.4rem "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+}
+input[type="number"]:focus-visible, .seg button:focus-visible {
+  outline: 2px solid var(--olive);
+  outline-offset: 2px;
+}
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.seg button {
+  font: 500 0.95rem Roboto, system-ui, sans-serif;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.2;
+}
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--olive); color: var(--on-olive); }
+.seg button small { display: block; font-size: 0.75rem; opacity: 0.8; }
+
+#out { margin-top: 26px; }
+.ctx {
+  font-family: "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.empty { color: var(--muted); }
+
+.wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 420px;
+}
+th, td { padding: 12px 10px; text-align: center; }
+thead th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line);
+}
+thead th span { display: block; font-weight: 400; font-size: 0.75rem; }
+tbody td {
+  font-family: "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+  font-weight: 600;
+  font-size: 1.7rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+tbody tr + tr td, tbody tr + tr th { border-top: 1px solid var(--line); }
+tbody th { width: 64px; }
+.badge {
+  display: inline-block;
+  min-width: 42px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font: 700 1.1rem "Roboto Condensed", "sans-serif-condensed", "Arial Narrow", sans-serif;
+}
+.m-B .badge { background: var(--olive-soft); color: var(--olive); }
+.m-MB .badge { background: var(--olive); color: var(--on-olive); }
+.m-E .badge { background: var(--brass-soft); color: var(--brass); }
+.m-E td { color: var(--brass); }
+.m-S .badge { background: var(--olive-soft); color: var(--olive); font-size: 0.9rem; }
+
+.note {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--olive);
+  background: var(--surface);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.95rem;
+}
+.foot { margin-top: 22px; color: var(--muted); font-size: 0.82rem; }
+.foot p { margin: 4px 0; }
+
+@media (max-width: 480px) {
+  .form { grid-template-columns: 1fr; gap: 8px; }
+  .form label.lbl { margin-top: 6px; }
+  h1 { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Índices do TAF</h1>
+  <p class="sub">Mínimo para B, MB e E conforme a EB20-D-03.053.</p>
+
+  <div class="form">
+    <label class="lbl" for="idade">Idade</label>
+    <input id="idade" type="number" inputmode="numeric" min="18" max="65" placeholder="anos">
+
+    <span class="lbl" id="lbl-sexo">Sexo</span>
+    <div class="seg" role="group" aria-labelledby="lbl-sexo" data-key="sexo">
+      <button type="button" data-v="M" aria-pressed="true">Masculino</button>
+      <button type="button" data-v="F" aria-pressed="false">Feminino</button>
+    </div>
+
+    <span class="lbl" id="lbl-linha">Linha</span>
+    <div class="seg" role="group" aria-labelledby="lbl-linha" data-key="linha">
+      <button type="button" data-v="I" aria-pressed="true">Tipo I<small>LEMB</small></button>
+      <button type="button" data-v="II" aria-pressed="false">Tipo II<small>LEMS, LEMC, LEMCT</small></button>
+    </div>
+  </div>
+
+  <section id="out" aria-live="polite"></section>
+
+  <div class="foot">
+    <p>Mínimo de B corresponde à suficiência no PAD; mínimo de MB, à suficiência no PED.</p>
+    <p>Corrida marcada de 50 em 50 m. Barra fixa só para LEMB.</p>
+    <p>Fonte: Portaria EME/C Ex nº 850, de 31 ago 2022, Anexos A a D.</p>
+  </div>
+</main>
+
+<script>
+// Cada faixa: [B, MB, E] (limite inferior de cada menção)
+const BANDS = ["18 a 21","22 a 25","26 a 29","30 a 33","34 a 37","38 a 41","42 a 45","46 a 49"];
+const SUF_BANDS = ["50 a 53","54 a 57","58 a 61","62 a 65"];
+const BAR_BANDS = ["18 a 21","22 a 25","26 a 29","30 a 33","34 a 37","38 a 39"];
+
+const ABD_M = [[45,64,74],[52,69,79],[49,66,76],[43,61,70],[40,57,66],[38,55,64],[36,53,62],[34,51,60]];
+const ABD_F = [[40,56,65],[42,58,67],[41,57,66],[39,55,64],[37,53,62],[35,51,60],[33,49,58],[31,47,56]];
+
+const T = {
+  "I-M": {
+    corrida: [[2800,3150,3200],[2850,3100,3250],[2750,3000,3150],[2650,2900,3100],[2550,2800,2950],[2450,2700,2850],[2400,2600,2750],[2300,2500,2650]],
+    abd: ABD_M,
+    flexao: [[25,34,39],[27,36,41],[25,34,39],[24,32,37],[21,29,34],[20,28,32],[18,25,29],[15,22,26]],
+    barra: [[7,10,12],[8,11,13],[7,10,12],[6,9,11],[5,7,9],[4,6,8]],
+    barraSuf: ["2 repetições", "1 repetição"],
+    suf: { corrida: [1900,1800,1600,1400], abd: [23,21,19,17], flexao: [11,9,8,6] }
+  },
+  "I-F": {
+    corrida: [[2200,2450,2600],[2250,2450,2650],[2200,2400,2600],[2150,2350,2550],[2100,2300,2500],[2000,2200,2400],[1950,2150,2300],[1850,2050,2250]],
+    abd: ABD_F,
+    flexao: [[12,17,20],[13,19,22],[12,17,20],[11,16,19],[10,15,18],[9,14,17],[8,13,16],[7,11,14]],
+    barra: [[3,5,6],[4,6,7],[3,5,6],[3,5,6],[3,4,5],[2,3,4]],
+    barraSuf: ["sustentação de 45 s", "sustentação de 30 s"],
+    suf: { corrida: [1600,1500,1300,1100], abd: [20,18,16,14], flexao: [5,4,3,2] }
+  },
+  "II-M": {
+    corrida: [[2700,2900,3000],[2800,2950,3050],[2700,2850,2950],[2650,2800,2900],[2550,2650,2750],[2450,2550,2650],[2350,2500,2600],[2300,2400,2500]],
+    abd: ABD_M,
+    flexao: [[25,30,33],[27,32,35],[25,30,33],[24,28,31],[21,26,29],[20,24,27],[18,22,25],[15,19,22]],
+    suf: { corrida: [1900,1800,1600,1400], abd: [23,21,19,17], flexao: [11,9,8,6] }
+  },
+  "II-F": {
+    corrida: [[2200,2300,2400],[2250,2350,2450],[2200,2300,2400],[2150,2250,2350],[2100,2200,2300],[2000,2150,2250],[1950,2050,2150],[1850,1950,2050]],
+    abd: ABD_F,
+    flexao: [[12,15,16],[13,16,17],[12,15,16],[11,14,15],[10,13,14],[9,12,13],[8,11,12],[7,10,11]],
+    suf: { corrida: [1600,1500,1300,1100], abd: [19,17,15,13], flexao: [5,4,3,2] }
+  }
+};
+
+const state = { sexo: "M", linha: "I" };
+const out = document.getElementById("out");
+const idadeEl = document.getElementById("idade");
+
+document.querySelectorAll(".seg").forEach(g => {
+  g.addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b ? "true" : "false"));
+    state[g.dataset.key] = b.dataset.v;
+    render();
+  });
+});
+idadeEl.addEventListener("input", render);
+
+const fmt = n => n.toLocaleString("pt-BR");
+const COLS = [
+  { key: "corrida", name: "Corrida", unit: "metros" },
+  { key: "abd", name: "Abdominal", unit: "repetições" },
+  { key: "flexao", name: "Flexão", unit: "repetições" },
+  { key: "barra", name: "Barra", unit: "repetições" }
+];
+
+function render() {
+  const raw = idadeEl.value.trim();
+  if (raw === "") { out.innerHTML = '<p class="empty">Informe a idade para ver os índices.</p>'; return; }
+  const age = Math.floor(Number(raw));
+  if (!Number.isFinite(age) || age < 18 || age > 65) {
+    out.innerHTML = '<p class="empty">As tabelas cobrem de 18 a 65 anos. Ajuste a idade.</p>';
+    return;
+  }
+  const t = T[state.linha + "-" + state.sexo];
+  const sexoTxt = state.sexo === "M" ? "masculino" : "feminino";
+  const linhaTxt = state.linha === "I" ? "LEMB" : "LEMS, LEMC e LEMCT";
+
+  if (age >= 50) {
+    const i = Math.floor((age - 50) / 4);
+    out.innerHTML = `
+      <p class="ctx">${SUF_BANDS[i]} anos, ${sexoTxt}, ${linhaTxt}</p>
+      <div class="wrap"><table>
+        <thead><tr><th></th>
+          <th>Corrida<span>metros</span></th><th>Abdominal<span>repetições</span></th><th>Flexão<span>repetições</span></th>
+        </tr></thead>
+        <tbody><tr class="m-S"><th><span class="badge">Suf.</span></th>
+          <td>${fmt(t.suf.corrida[i])}</td><td>${t.suf.abd[i]}</td><td>${t.suf.flexao[i]}</td>
+        </tr></tbody>
+      </table></div>
+      <div class="note">A partir dos 50 anos não há conceituação (B, MB, E), apenas suficiência. Barra fixa não é aplicada.</div>`;
+    return;
+  }
+
+  const i = Math.floor((age - 18) / 4);
+  const temBarra = state.linha === "I";
+  const barraConceito = temBarra && age <= 39;
+  const bi = barraConceito ? (age >= 38 ? 5 : Math.floor((age - 18) / 4)) : null;
+  const cols = COLS.filter(c => c.key !== "barra" || barraConceito);
+
+  const head = cols.map(c => `<th>${c.name}<span>${c.unit}</span></th>`).join("");
+  const rows = ["B", "MB", "E"].map((m, k) => {
+    const cells = cols.map(c => {
+      const v = c.key === "barra" ? t.barra[bi][k] : t[c.key][i][k];
+      return `<td>${c.key === "corrida" ? fmt(v) : v}</td>`;
+    }).join("");
+    return `<tr class="m-${m}"><th><span class="badge">${m}</span></th>${cells}</tr>`;
+  }).join("");
+
+  let note = "";
+  if (barraConceito && age >= 38) {
+    note = `<div class="note">Barra fixa considera a faixa de 38 a 39 anos.</div>`;
+  } else if (temBarra && age >= 40) {
+    const s = t.barraSuf[age <= 45 ? 0 : 1];
+    note = `<div class="note">Barra fixa: a partir dos 40 anos só há suficiência. Mínimo de ${s}.</div>`;
+  }
+
+  out.innerHTML = `
+    <p class="ctx">${BANDS[i]} anos, ${sexoTxt}, ${linhaTxt}</p>
+    <div class="wrap"><table>
+      <thead><tr><th></th>${head}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>${note}`;
+}
+render();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
